@@ -1,0 +1,27 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Buttons</title>
+</head>
+<body>
+  <h1> this is the buttons page</h1>
+  <hr>
+  <a href="index.html" target="_self" title="link back to index">
+    <button style="background-color: #22aeaa;border-radius: 5px;">Back to Index</button>
+  </a>
+  <br>
+  <br>
+  <button onclick="doSomething()" style="background-color: #22aeaa;border-radius: 5px;">Do Something</button>
+
+  <p id="test">Hello</p>
+
+  <script>
+    function doSomething(){
+      document.getElementById("test").innerHTML = "GoodBye"
+    }
+  </script>
+
+</body>
+</html>
