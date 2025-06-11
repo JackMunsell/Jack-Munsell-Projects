@@ -12,9 +12,11 @@
 #include <random>
 
 class Card {
+    private:
+        int value;
+        char suit;
     public:
-    int value;
-    char suit;
+
     
     Card() : value(0), suit(' ') {} // Default Constructor
     Card(int v, char s) : value(v), suit(s) {} // Alternate Constructor given the cards information
@@ -37,7 +39,7 @@ std::stack<Card> playerCards;
 std::stack<Card> computerCards;
 
 std::string cardToString(Card cardStack) {
-    switch(cardStack.suit) {
+    switch(cardStack.getSuit()) {
         case 'D':
             if(cardStack.getValue() > 0 && cardStack.getValue() < 10) {
                 return std::to_string(cardStack.getValue() + 1) + " of Diamonds";
@@ -192,7 +194,39 @@ void appendToStackBottom(Card card1, Card card2, bool playerWon) {
     
 }
 
-void appendToStackBottomTie(Card playerCard, Card computerCard) {
+void appendToStackBottom(Card card1, bool playerWon) {
+    std::stack<Card> tempCards;
+    if(playerWon) {
+        // transfers playerCards stack to tempCards stack, empties playerCards
+        while (!playerCards.empty()) {
+            tempCards.push(playerCards.top());
+            playerCards.pop();
+        }
+        // adds the card to the bottom of playerCards stack
+        playerCards.push(card1); 
+        // moves tempCards stack to playerCards stack, empties tempcCards
+        while (!tempCards.empty()) {
+            playerCards.push(tempCards.top());
+            tempCards.pop();
+        }
+    } else {
+        // transfers computerCards stack to tempCards stack, empties computerCards
+        while (!computerCards.empty()) {
+            tempCards.push(computerCards.top());
+            computerCards.pop();
+        }
+        // adds the card to the bottom of computerCards stack
+        computerCards.push(card1); 
+        // moves tempCards stack to computerCards stack, empties tempCards
+        while (!tempCards.empty()) {
+            computerCards.push(tempCards.top());
+            tempCards.pop();
+        }
+    }
+}
+
+void appendToStackBottom(Card playerCard, Card computerCard) {
+    // adds the first card of both players to wonCards
     std::cout << "main start" << std::endl;
     std::vector<Card> wonCards;
     std::cout << "main start 2" << std::endl;
@@ -201,7 +235,7 @@ void appendToStackBottomTie(Card playerCard, Card computerCard) {
     wonCards.push_back(computerCard);
     std::cout << "main start 4" << std::endl;
 
-
+    // pops both the player and computers next 3 cards for war, pushes them into wonCards
     for(int i = 2; i < 5; i++) {
         std::cout << "main for loop" << std::endl;
         wonCards.push_back(playerCards.top());
@@ -245,8 +279,24 @@ void appendToStackBottomTie(Card playerCard, Card computerCard) {
 
             appendToStackBottom(wonCards[i],wonCards[i+5],true);
         }
-    } else {
-        std::cout << "why" <<std::endl;
+    } else { //if the war cards are equal shuffle wonCards and then distribute 4 cards to both players
+        std::random_device rd;
+        std::mt19937 g(rd());
+
+        wonCards.push_back(computerCard);
+        wonCards.push_back(playerCard);
+        
+        std::shuffle(wonCards.begin(), wonCards.end(), g);
+        for(int i = 0; i < wonCards.size() - 1; i++) {
+            if(i % 2 != 0) { // gives half to the player
+                appendToStackBottom(wonCards[i], true);
+            } else { // gives the other half to the computer
+                appendToStackBottom(wonCards[i], false);
+            }
+        }
+
+        std::cout << "Deck size: " << playerCards.size() + computerCards.size() << std::endl;
+        // std::cout << "why" <<std::endl;
     }
 }
 
@@ -261,6 +311,7 @@ int main() {
     char suits[4] = {'D','H','S','C'};
     int cardValues[10];
     int values[13];
+    std::vector<Card> wonCards;
 
 
     createDeck(deck, suits);
@@ -280,7 +331,7 @@ int main() {
             std::cout << "Computer final deck size: " << computerCards.size() << std::endl;
             break;
         }
-
+        // gets the first card of each player
         Card playerCard = playerCards.top();
         Card computerCard = computerCards.top();
         playerCards.pop();
@@ -292,7 +343,6 @@ int main() {
         std::cout << "Computer deck size: " << computerCards.size() + 1 << std::endl;
 
 
-
         if (playerCard.getValue() > computerCard.getValue()) {
             std::cout << "Players card is higher, Player wins!" << std::endl;
             appendToStackBottom(playerCard, computerCard, true);
@@ -300,13 +350,60 @@ int main() {
             std::cout << "Computers card is higher, Computer wins!" << std::endl;
             appendToStackBottom(computerCard, playerCard, false);
         } else {
-            if(playerCards.size() < 6) {
-                return 0;
-            } else if(computerCards.size() < 6) {
-                return 0;
+            // if the player doesnt have enough cards for war then read the bottom card in the stack 
+            //-- and play it against the war card of the computer
+            if(playerCards.size() < 5) {
+                std::cout << "Player and Computer cards are equal, going into war!" << std::endl;
+                // pushes and pops all but the last card for playerCards into the wonCards vector<Card>
+                for(int i = 0; i < playerCards.size() - 1; i++) {
+                    wonCards.push_back(playerCards.top());
+                    playerCards.pop();
+                }
+                // pushes and pops the next 3 cards in computerCards into the wonCards vector<Card>
+                for(int i = 0; i < 3; i++) {
+                    wonCards.push_back(computerCards.top());
+                    computerCards.pop();
+                }
+                // checks if the players top card has a higher value than the computers top card,
+                // if: appends every card in wonCards to playerCards
+                // else: appends every card in wonCards to the bottom of computerCards
+                if(playerCards.top().getValue() > computerCards.top().getValue()) {
+                    for(int i = 0; i < wonCards.size() - 1; i++) {
+                        playerCards.push(wonCards[i]);
+                    }
+                } else {
+                    for(int i = 0; i < wonCards.size(); i++) {
+                        appendToStackBottom(wonCards[i], false);
+                    }
+                }
+            // same as above but for computer 
+            } else if(computerCards.size() < 5) {
+                std::cout << "Player and Computer cards are equal, going into war!" << std::endl;
+                // pushes and pops all but the last card for computerCards into the wonCards vector<Card>
+                for(int i = 0; i < computerCards.size() - 1; i++) {
+                    wonCards.push_back(computerCards.top());
+                    computerCards.pop();
+                }
+                // pushes and pops the next 3 cards in playerCards into the wonCards vector<Card>
+                for(int i = 0; i < 3; i++) {
+                    wonCards.push_back(playerCards.top());
+                    playerCards.pop();
+                }
+                // checks if the computers top card has a higher value than the players top card,
+                // if: appends every card in wonCards to computerCards
+                // else: appends every card in wonCards to the bottom of playerCards
+                if(computerCards.top().getValue() > playerCards.top().getValue()) {
+                    for(int i = 0; i < wonCards.size() - 1; i++) {
+                        computerCards.push(wonCards[i]);
+                    }
+                } else {
+                    for(int i = 0; i < wonCards.size(); i++) {
+                        appendToStackBottom(wonCards[i], false);
+                    }
+                }
             } else {
                 std::cout << "Player and Computer cards are equal, going into war!" << std::endl;
-                appendToStackBottomTie(playerCard, computerCard);
+                appendToStackBottom(playerCard, computerCard);
             }
         }
 
