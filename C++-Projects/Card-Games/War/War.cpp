@@ -236,7 +236,7 @@ void appendToStackBottom(Card playerCard, Card computerCard) {
     std::cout << "main start 4" << std::endl;
 
     // pops both the player and computers next 3 cards for war, pushes them into wonCards
-    for(int i = 2; i < 5; i++) {
+    for(int i = 0; i < 3; i++) {
         std::cout << "main for loop" << std::endl;
         wonCards.push_back(playerCards.top());
         playerCards.pop();
@@ -282,12 +282,9 @@ void appendToStackBottom(Card playerCard, Card computerCard) {
     } else { //if the war cards are equal shuffle wonCards and then distribute 4 cards to both players
         std::random_device rd;
         std::mt19937 g(rd());
-
-        wonCards.push_back(computerCard);
-        wonCards.push_back(playerCard);
         
         std::shuffle(wonCards.begin(), wonCards.end(), g);
-        for(int i = 0; i < wonCards.size() - 1; i++) {
+        for(int i = 0; i < wonCards.size(); i++) {
             if(i % 2 != 0) { // gives half to the player
                 appendToStackBottom(wonCards[i], true);
             } else { // gives the other half to the computer
@@ -296,7 +293,6 @@ void appendToStackBottom(Card playerCard, Card computerCard) {
         }
 
         std::cout << "Deck size: " << playerCards.size() + computerCards.size() << std::endl;
-        // std::cout << "why" <<std::endl;
     }
 }
 
@@ -307,12 +303,10 @@ void appendToStackBottom(Card playerCard, Card computerCard) {
 int main() {
     std::srand(std::time(0));
 
+    int runCount = 1;
     Card deck[52];
     char suits[4] = {'D','H','S','C'};
-    int cardValues[10];
-    int values[13];
     std::vector<Card> wonCards;
-
 
     createDeck(deck, suits);
     shuffle(deck);
@@ -353,9 +347,9 @@ int main() {
             // if the player doesnt have enough cards for war then read the bottom card in the stack 
             //-- and play it against the war card of the computer
             if(playerCards.size() < 5) {
-                std::cout << "Player and Computer cards are equal, going into war!" << std::endl;
+                std::cout << "Player and Computer cards are equal, player doesnt have enough cards for normal war, going into special war!" << std::endl;
                 // pushes and pops all but the last card for playerCards into the wonCards vector<Card>
-                for(int i = 0; i < playerCards.size() - 1; i++) {
+                while(playerCards.size() > 1) {
                     wonCards.push_back(playerCards.top());
                     playerCards.pop();
                 }
@@ -364,23 +358,38 @@ int main() {
                     wonCards.push_back(computerCards.top());
                     computerCards.pop();
                 }
+                wonCards.push_back(playerCard);
+                wonCards.push_back(computerCard);
+
                 // checks if the players top card has a higher value than the computers top card,
                 // if: appends every card in wonCards to playerCards
                 // else: appends every card in wonCards to the bottom of computerCards
                 if(playerCards.top().getValue() > computerCards.top().getValue()) {
-                    for(int i = 0; i < wonCards.size() - 1; i++) {
+                    std::cout << "Player wins war" << std::endl;
+                    wonCards.push_back(playerCards.top());
+                    playerCards.pop();
+                    wonCards.push_back(computerCards.top());
+                    computerCards.pop();
+                    for(int i = 0; i < wonCards.size(); i++) {
                         playerCards.push(wonCards[i]);
                     }
+
                 } else {
+                    std::cout << "Computer wins war" << std::endl;
+                    wonCards.push_back(playerCards.top());
+                    playerCards.pop();
+                    wonCards.push_back(computerCards.top());
+                    computerCards.pop();
                     for(int i = 0; i < wonCards.size(); i++) {
                         appendToStackBottom(wonCards[i], false);
                     }
+
                 }
             // same as above but for computer 
             } else if(computerCards.size() < 5) {
-                std::cout << "Player and Computer cards are equal, going into war!" << std::endl;
+                std::cout << "Player and Computer cards are equal, computer doesnt have enough cards for normal war, going into special war!" << std::endl;
                 // pushes and pops all but the last card for computerCards into the wonCards vector<Card>
-                for(int i = 0; i < computerCards.size() - 1; i++) {
+                while(computerCards.size() > 1) {
                     wonCards.push_back(computerCards.top());
                     computerCards.pop();
                 }
@@ -389,26 +398,46 @@ int main() {
                     wonCards.push_back(playerCards.top());
                     playerCards.pop();
                 }
+                wonCards.push_back(playerCard);
+                wonCards.push_back(computerCard);
                 // checks if the computers top card has a higher value than the players top card,
                 // if: appends every card in wonCards to computerCards
                 // else: appends every card in wonCards to the bottom of playerCards
                 if(computerCards.top().getValue() > playerCards.top().getValue()) {
-                    for(int i = 0; i < wonCards.size() - 1; i++) {
+                    std::cout << "Computer wins war" << std::endl;
+                    wonCards.push_back(playerCards.top());
+                    playerCards.pop();
+                    wonCards.push_back(computerCards.top());
+                    computerCards.pop();
+                    for(int i = 0; i < wonCards.size(); i++) {
                         computerCards.push(wonCards[i]);
                     }
                 } else {
+                    std::cout << "Player wins war" << std::endl;
+                    wonCards.push_back(playerCards.top());
+                    playerCards.pop();
+                    wonCards.push_back(computerCards.top());
+                    computerCards.pop();
                     for(int i = 0; i < wonCards.size(); i++) {
-                        appendToStackBottom(wonCards[i], false);
+                        appendToStackBottom(wonCards[i], true);
                     }
                 }
             } else {
-                std::cout << "Player and Computer cards are equal, going into war!" << std::endl;
+                std::cout << "\nPlayer and Computer cards are equal, going into war!" << std::endl;
+                std::cout << std::endl;
                 appendToStackBottom(playerCard, computerCard);
             }
+            
         }
+        runCount++;
 
         if((playerCards.size() + computerCards.size()) != 52) {
-            std::cout << "total cards less than 52" << std::endl;
+            std::cout << "Deck size: " << computerCards.size() + playerCards.size() << std::endl;
+            std::cout << "\ntotal cards less than 52" << std::endl;
+            exit(0);
+        }
+        if(runCount > 1000) {
+            std::cout << "Game has been running for too long, exiting" << std::endl;
             exit(0);
         }
         std::cout << std::endl;
