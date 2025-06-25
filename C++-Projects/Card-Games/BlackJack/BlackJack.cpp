@@ -431,6 +431,7 @@ void playGame() {
         dealerHand.clear();
         playerCardValue = 0;
         dealerCardValue = 0;
+        std::cout<<"cardStack size: "<<cardStack.size()<<"\n";
         std::cout<<"\n\tPlayer Score: "<<playerScore<<"\n";
         std::cout<<"\tDealer Score: "<<dealerScore<<"\n";
         std::cout<<"\nPlay another game? (1 for Yes, 0 for No)\n";
@@ -438,7 +439,6 @@ void playGame() {
         // Clears terminal
         // std::system("clear");
         gamesPlayed++;
-        std::cout<<"cardStack size: "<<cardStack.size()<<"\n";
     }
     std::cout<<"\n\tFinal Scores:\n";
     std::cout<<"\tPlayer Score: "<<playerScore<<"\n";
