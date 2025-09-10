@@ -42,6 +42,10 @@ class Card {
 
 };
 
+void gameOver();
+
+Card deck[52];
+char suits[4] = {'D','H','S','C'};
 std::stack<Card> cardStack;
 std::vector<Card> playerHand;
 std::vector<Card> dealerHand;
@@ -147,8 +151,7 @@ std::string cardToString(Card cardStack) {
     return " ";
 }
 
-void createDeck(Card deck[], char suits[]) {
-    std::cout<<"----------=Starting BlackJack=---------\n";
+void createDeck() {
     std::cout<<"Building the deck.\n";
     for(int i = 0; i < 4; i++) {
         for(int j = 0; j < 13; j++) {
@@ -157,24 +160,69 @@ void createDeck(Card deck[], char suits[]) {
     }
 }
 
-void dealCards(Card deck[]) {
-    std::cout<<"Dealing cards.\n";
-    for(int i = 0; i < 2; i++) {
-        playerHand.push_back(deck[i]);
-        dealerHand.push_back(deck[i + 2]);
-        cardStack.pop();
-        cardStack.pop();
-    }
-    
-}
-
-void shuffle(Card deck[]) {
+void shuffle() {
     std::cout<<"Shuffling deck.\n";
     std::random_device rd;
     std::mt19937 g(rd());
     shuffle(deck, deck + 52, g);
     for(int i = 0; i < 52; i++) {
         cardStack.push(deck[i]);
+    }
+}
+
+void dealCards() {
+    std::cout<<"Dealing cards.\n";
+    playerHand.clear();
+    dealerHand.clear();
+    if(cardStack.size() > 3) {
+        for(int i = 0; i < 2; i++) {
+            playerHand.push_back(cardStack.top());
+            cardStack.pop();
+            dealerHand.push_back(cardStack.top());
+            cardStack.pop();
+        }
+    } else if(cardStack.size() == 3) {
+        playerHand.push_back(cardStack.top());
+        cardStack.pop();
+        dealerHand.push_back(cardStack.top());
+        cardStack.pop();
+        playerHand.push_back(cardStack.top());
+        cardStack.pop();
+        createDeck();
+        shuffle();
+        dealerHand.push_back(cardStack.top());
+        cardStack.pop();
+    } else if(cardStack.size() == 2) {
+        playerHand.push_back(cardStack.top());
+        cardStack.pop();
+        dealerHand.push_back(cardStack.top());
+        cardStack.pop();
+        createDeck();
+        shuffle();
+        playerHand.push_back(cardStack.top());
+        cardStack.pop();
+        dealerHand.push_back(cardStack.top());
+        cardStack.pop();
+    } else if(cardStack.size() == 1) {
+        playerHand.push_back(cardStack.top());
+        cardStack.pop();
+        createDeck();
+        shuffle();
+        dealerHand.push_back(cardStack.top());
+        cardStack.pop();
+        playerHand.push_back(cardStack.top());
+        cardStack.pop();
+        dealerHand.push_back(cardStack.top());
+        cardStack.pop();
+    } else {
+        createDeck();
+        shuffle();
+        for(int i = 0; i < 2; i++) {
+            playerHand.push_back(cardStack.top());
+            cardStack.pop();
+            dealerHand.push_back(cardStack.top());
+            cardStack.pop();
+        }
     }
 }
 
@@ -195,29 +243,35 @@ int getDealerCardValue() {
 }
 
 void printCards(std::vector<Card> hand) {
-    std::cout<<"Cards in hand: \n";
     for(int i = 0; i < hand.size(); i++) {
-        std::cout<<cardToString(hand[i])<<"\n";
+        std::cout<<"-"<<cardToString(hand[i])<<"-\n";
     }
     std::cout<<"\n";
 }
 
 void printPlayerHand(std::vector<Card> hand) {
+    std::cout<<"\t---Your hand---\n";
+    printCards(hand);
     std::cout<<"Total cards in hand: "<<hand.size()<<"\n";
     std::cout<<"Total value of hand: "<<getPlayerCardValue()<<"\n";
     if(getPlayerCardValue() > 21) {
-        std::cout<<"\nYou busted! Your hand value is over 21.\n";
         isPlayerTurn = false;
-        isGameOver = false;
+        playerLost = true;
         dealerScore++;
     }
     std::cout<<"\n";
-    printCards(hand);
 }
 
 void printDealerHand(std::vector<Card> hand) {
+    std::cout<<"\t---Dealers hand--- \n";
+    if(dealerHand[0].getCardValue() >= 10 && dealerHand.size() == 2) {
+        std::cout<<"Dealers top card is: "<<cardToString(dealerHand[0])<<"\n";
+    }
+    if(dealerHand.size() > 2) {
+        printCards(dealerHand);
+        std::cout<<"Total value of hand: "<<getDealerCardValue()<<"\n";
+    }
     std::cout<<"Total cards in hand: "<<hand.size()<<"\n";
-    std::cout<<"Total value of hand: "<<getDealerCardValue()<<"\n";
     std::cout<<"\n";
 }
 
@@ -227,11 +281,13 @@ void hit(bool isPlayer) {
             Card hitCard = cardStack.top();
             cardStack.pop();
             playerHand.push_back(hitCard);
-            std::cout<<"You drew a: "<<cardToString(hitCard)<<"\n";
-            std::cout<<"\nYour hand is now: \n";
+            std::cout<<"You drew a: "<<cardToString(hitCard)<<"\n\n";
             printPlayerHand(playerHand);
         } else {
-            std::cout<<"No more cards in the deck. Exiting game.\n";
+            std::cout<<"No more cards in the deck. Creating and shuffling a new deck.\n";
+            createDeck();
+            shuffle();
+            hit(true);
         }
     } else {
         if(!cardStack.empty()) {
@@ -243,7 +299,10 @@ void hit(bool isPlayer) {
             printDealerHand(dealerHand);
             printCards(dealerHand);
         } else {
-            std::cout<<"No more cards in the deck. Exiting game.\n";
+            std::cout<<"No more cards in the deck. Creating and shuffling a new deck.\n";
+            createDeck();
+            shuffle();
+            hit(false);
         }
     }   
 }
@@ -265,13 +324,12 @@ void printRules() {
     std::cout << "13. Splitting, doubling down, and insurance are not supported in this version YET.\n";
     std::cout << "14. Dealer reveals their full hand after the player stands.\n";
     std::cout << "15. The game continues until the player chooses to stop.\n";
-    std::cout << "16. After 16 games a new deck will be created and shuffled.\n";
 }
 
 void playerTurn() {
+    printRules();
     isPlayerTurn = true;
-    std::cout<<"\n----------=Players turn=----------\n";
-    std::cout<<"Players hand: \n";
+    std::cout<<"\n----------=Your turn=----------\n";
     printPlayerHand(playerHand);
     while(isPlayerTurn) {
         if(getPlayerCardValue() > 21) {
@@ -293,27 +351,30 @@ void playerTurn() {
 
         switch(choice) {
             case 0:
-                std::cout<<"You chose to stand.\n";
+                std::cout<<"\nYou chose to stand.\n";
                 isPlayerTurn = false;
                 playerLost = false;
                 break;
             case 1:
-                std::cout<<"You chose to hit.\n";
+                std::cout<<"\nYou chose to hit.\n";
                 hit(isPlayerTurn);
                 break;
             default:
-                std::cout<<"Choice invalid, try again.\n";
+                std::cout<<"\nChoice invalid, try again.\n";
                 continue;
         }
     }
 }
 
 void dealerTurn() {
+    system("clear");
+    if(getPlayerCardValue() > 21) {
+        return;
+    }
     isPlayerTurn = false;
-    std::cout<<"\n----------=Dealers turn=----------\n";
+    std::cout<<"\n----------=Dealers turn=----------\n\n";
     if(dealerHand[0].getCardValue() >= 10) {
         std::cout<<"Dealers top card is the " << cardToString(dealerHand[0]) << ". Dealer must reveal their second card.\n";
-        std::cout<<"Dealers hand is now: \n";
         printDealerHand(dealerHand);
         printCards(dealerHand);
         while(getDealerCardValue() < 17) {
@@ -325,21 +386,14 @@ void dealerTurn() {
         }
         if(getDealerCardValue() > 21) {
             std::cout<<"Dealer busted! Dealer's hand value is over 21.\n";
-            std::cout<<"Your hand: \n";
-            printPlayerHand(playerHand);
-            std::cout<<"\nDealers hand: \n";
-            printDealerHand(dealerHand);
-            printCards(dealerHand);
-            std::cout<<"You win!\n";
+            gameOver();
             playerScore++;
             isGameOver = true;
             return;
         }
         if(getDealerCardValue() >= 17) {
-            std::cout<<"Dealers final hand: \n";
             printDealerHand(dealerHand);
         }
-        std::cout<<"Dealers final hand: \n";
         printDealerHand(dealerHand);
         printCards(dealerHand);
     } else {
@@ -348,19 +402,10 @@ void dealerTurn() {
             hit(isPlayerTurn);
         }
         if(getDealerCardValue() > 21) {
-            std::cout<<"Dealer busted! Dealer's hand value is over 21.\n";
-            std::cout<<"Your hand: \n";
-            printPlayerHand(playerHand);
-            std::cout<<"Dealers hand: \n";
-            printDealerHand(dealerHand);
-            printCards(dealerHand);
-            std::cout<<"You win!\n";
             playerScore++;
-            isGameOver = true;
             return;
         }
         if(getDealerCardValue() >= 17) {
-            std::cout<<"Dealers final hand: \n";
             printDealerHand(dealerHand);
             printCards(dealerHand);
         }
@@ -368,13 +413,16 @@ void dealerTurn() {
 }
 
 void gameOver() {
-    std::cout<<"\n----------=Game Over=----------\n";
-            std::cout<<"Your hand: \n";
+    system("clear");
+    std::cout<<"----------=Game Over=----------\n";
             printPlayerHand(playerHand);
-            std::cout<<"\nDealers hand: \n";
             printDealerHand(dealerHand);
             std::cout<<"----------=+=-=+=----------\n";
-            if(dealerHand[0].getCardValue() == 11 && dealerHand[1].getCardValue() == 10 && playerHand[0].getCardValue() == 11 && playerHand[1].getCardValue() == 10){
+            if(getDealerCardValue() > 21) {
+                std::cout<<"Dealer busted! Dealer's hand value is over 21.\n";
+            } else if(getPlayerCardValue() > 21) {
+                std::cout<<"You Busted! Your hand value is over 21.\n";
+            } else if(dealerHand[0].getCardValue() == 11 && dealerHand[1].getCardValue() == 10 && playerHand[0].getCardValue() == 11 && playerHand[1].getCardValue() == 10){
                 std::cout<<"Both you and the dealer got a Blackjack! Dealer wins!\n";
                 dealerScore++;
             } else if(playerHand[0].getCardValue() == 11 && playerHand[1].getCardValue() == 10) {
@@ -404,41 +452,32 @@ void emptyCardStack() {
 
 void playGame() {
     bool playerChoice = true;
-    Card deck[52];
-    char suits[4] = {'D','H','S','C'};
-
-    createDeck(deck, suits);
-    shuffle(deck);
+    
+    std::cout<<"----------=Starting BlackJack=---------\n";
+    createDeck();
+    shuffle();
     while(playerChoice) {
-        if(gamesPlayed % 16 == 0 && gamesPlayed != 0) {
-            std::cout<<"16 games have been played creating a new deck and shuffling.\n";
-            emptyCardStack();
-            createDeck(deck, suits);
-            shuffle(deck);
-        }
-        dealCards(deck);
-        printRules();
+        dealCards();
         playerTurn();
+        sleep(1);
         if(playerLost == false) {
             dealerTurn();
         }
-        if(isGameOver == false) {
-            gameOver();
-        }
+        sleep(1);
+
+        gameOver();
+        
 
         // Reset game state for next round
-        playerHand.clear();
-        dealerHand.clear();
         playerCardValue = 0;
         dealerCardValue = 0;
-        std::cout<<"cardStack size: "<<cardStack.size()<<"\n";
+        std::cout<<"Cards Remaining In deck: "<<cardStack.size()<<"\n";
         std::cout<<"\n\tPlayer Score: "<<playerScore<<"\n";
         std::cout<<"\tDealer Score: "<<dealerScore<<"\n";
         std::cout<<"\nPlay another game? (1 for Yes, 0 for No)\n";
         std::cin>>playerChoice;
         // Clears terminal
-        // std::system("clear");
-        gamesPlayed++;
+        std::system("clear");
     }
     std::cout<<"\n\tFinal Scores:\n";
     std::cout<<"\tPlayer Score: "<<playerScore<<"\n";
