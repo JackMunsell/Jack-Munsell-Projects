@@ -1,0 +1,19 @@
+[RECIPES]
+Chicken and Rice|4|Cook rice and chicken, then combine.
+#INGREDIENTS
+Chicken Breast,150,g,165,31,0,3
+White Rice,150,g,130,3,28,0
+Olive Oil,10,g,884,0,0,100
+#END_INGREDIENTS
+Oatmeal with Banana|4|Cook oats in milk and top with banana.
+#INGREDIENTS
+Oats,50,g,389,17,66,7
+Milk 2%,200,ml,50,4,5,2
+Banana,100,g,89,1,23,0
+#END_INGREDIENTS
+Protein Shake|5|Blend all ingredients until smooth.
+#INGREDIENTS
+Milk 2%,250,ml,50,4,5,2
+Whey Protein,30,g,400,80,8,7
+Peanut Butter,20,g,588,25,20,50
+#END_INGREDIENTS
