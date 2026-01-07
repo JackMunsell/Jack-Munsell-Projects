@@ -1,3 +1,32 @@
+/*
+ * Maze Solver Program
+ * ------------------------------------------------------------
+ * DESCRIPTION:
+ *  This program loads a maze represented as a grid and finds the
+ *  shortest path between a start and end position using both
+ *  Dijkstra's Algorithm and the A* pathfinding algorithm.
+ *
+ * HOW TO COMPILE:
+ *      gcc MazeSolver.c -o maze_solver
+ *
+ * HOW TO RUN:
+ *      ./maze_solver
+ *
+ * PROGRAM FLOW:
+ *  - Loads or builds a maze grid
+ *  - Runs Dijkstra’s Algorithm
+ *  - Runs A* Algorithm
+ *  - Compares path length / cost
+ *  - Prints the final path and results
+ *
+ * NOTES:
+ *  - Obstacles are treated as blocked cells.
+ *  - The algorithms reconstruct the path using parent pointers.
+ *  - Execution time is measured to compare performance.
+ *
+ * Author: Jack Munsell
+ */
+
 #include <stdio.h>
 #include <stdlib.h>
 #include <stdbool.h>

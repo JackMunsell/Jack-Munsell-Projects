@@ -1,3 +1,36 @@
+/*
+ * Sudoku Game and Solver
+ * ------------------------------------------------------------
+ * DESCRIPTION:
+ *  Interactive Sudoku program with multiple difficulty levels,
+ *  validation rules, hints, and an optional AI solver.
+ *
+ * HOW TO COMPILE:
+ *      gcc sudoku.c -o sudoku
+ *
+ * HOW TO RUN:
+ *      ./sudoku
+ *
+ * GAME OPTIONS:
+ *  1) Play Sudoku without hints
+ *  2) Play Sudoku with hint suggestions
+ *  3) Let the AI automatically solve the puzzle
+ *
+ * GAME FLOW:
+ *  - Program generates a valid completed Sudoku board
+ *  - Cells are removed depending on difficulty
+ *  - Player enters row, column, and number values
+ *  - Input is checked for validity and Sudoku rules
+ *  - Program detects win condition
+ *
+ * TECHNICAL NOTES:
+ *  - Uses backtracking recursion for solving
+ *  - Ensures all puzzles remain solvable
+ *  - Includes hint system + AI solver
+ *
+ * Author: Jack Munsell
+ */
+
 #include <stdio.h>
 #include <stdlib.h>
 #include <stdbool.h>
