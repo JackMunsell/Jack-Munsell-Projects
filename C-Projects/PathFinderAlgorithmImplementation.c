@@ -2,6 +2,7 @@
 #include <stdlib.h>
 #include <stdbool.h>
 #include <limits.h>
+#include <time.h>
 
 #define ROWS 10
 #define COLS 10
@@ -234,9 +235,9 @@ int main() {
         {1, 0, 0, 1, 0, 0, 1, 0, 0, 1},
         {1, 1, 0, 1, 0, 1, 1, 0, 1, 1},
         {1, 1, 0, 1, 0, 1, 0, 0, 0, 1},
-        {1, 0, 0, 0, 0, 0, 0, 1, 0, 1},
+        {1, 0, 0, 0, 0, 1, 0, 1, 0, 1},
         {1, 0, 1, 1, 0, 1, 1, 1, 0, 1},
-        {1, 0, 0, 1, 0, 0, 1, 0, 0, 1},
+        {1, 0, 0, 1, 0, 0, 0, 0, 0, 1},
         {1, 1, 1, 1, 1, 1, 1, 1, 1, 1}
     };
 
@@ -259,11 +260,26 @@ int main() {
         }
     }
 
-    printf("Running Dijkstra's Algorithm\n");
+    printf("Starting Grid:\n");
+    printGrid(gridMap, NULL);
+
+    clock_t start = clock();
+
+    printf("\nRunning Dijkstra's Algorithm\n");
     dijkstra(grid1, startRow, startCol, goalRow, goalCol, gridMap);
 
-    printf("Running A* Algorithm\n");
+    clock_t end = clock();
+    double cpu_time_used = ((double) (end - start)) / CLOCKS_PER_SEC;
+    printf("Dijkstra's Algorithm Time: %f seconds\n", cpu_time_used);
+
+
+    start = clock();
+    printf("\nRunning A* Algorithm\n");
     aStar(grid2, startRow, startCol, goalRow, goalCol, gridMap);
+
+    end = clock();
+    cpu_time_used = ((double) (end - start)) / CLOCKS_PER_SEC;
+    printf("A* Algorithm Time: %f seconds\n", cpu_time_used);
 
     return 0;
 }
