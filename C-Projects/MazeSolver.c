@@ -33,8 +33,11 @@
 #include <limits.h>
 #include <time.h>
 
-#define ROWS 10
-#define COLS 10
+// Both must be odd numbers
+int ROWS, COLS;
+
+// Up, Down, Left, Right
+int directions[4][2] = {{-1, 0}, {1, 0}, {0, -1}, {0, 1}};
 
 
 struct Node {
@@ -51,6 +54,148 @@ struct Node {
 //It is used as a heuristic in the A* algorithm to estimate the remaining distance to the goal.
 int heuristic(int row1, int col1, int row2, int col2) {
     return abs(row1 - row2) + abs(col1 - col2);
+}
+
+static int randOdd(int low, int high) {
+    // Returns a random odd number in [low, high], assumes low/high are valid range bounds.
+    int x = low + (rand() % (high - low + 1));
+    if (x % 2 == 0) x++;
+    if (x > high) x -= 2;
+    return x;
+}
+
+static void bfsFarthestCell(int **gridMap, int startR, int startC, int* outR, int* outC) {
+    int dist[ROWS][COLS];
+    for (int r = 0; r < ROWS; r++) {
+        for (int c = 0; c < COLS; c++) dist[r][c] = -1;
+    }
+
+    int qR[ROWS * COLS];
+    int qC[ROWS * COLS];
+    int head = 0, tail = 0;
+
+    qR[tail] = startR;
+    qC[tail] = startC;
+    tail++;
+    dist[startR][startC] = 0;
+
+    int farR = startR, farC = startC;
+
+    while (head < tail) {
+        int r = qR[head];
+        int c = qC[head];
+        head++;
+
+        if (dist[r][c] > dist[farR][farC]) {
+            farR = r;
+            farC = c;
+        }
+
+        for (int i = 0; i < 4; i++) {
+            int nr = r + directions[i][0];
+            int nc = c + directions[i][1];
+
+            if (nr >= 0 && nr < ROWS && nc >= 0 && nc < COLS &&
+                gridMap[nr][nc] != 1 && dist[nr][nc] == -1) {
+                dist[nr][nc] = dist[r][c] + 1;
+                qR[tail] = nr;
+                qC[tail] = nc;
+                tail++;
+            }
+        }
+    }
+
+    *outR = farR;
+    *outC = farC;
+}
+
+void generateMaze(int **gridMap, int rows, int cols) {
+    (void)rows; (void)cols;
+
+    // 1) Fill with walls
+    for (int r = 0; r < ROWS; r++) {
+        for (int c = 0; c < COLS; c++) {
+            gridMap[r][c] = 1;
+        }
+    }
+
+    // 2) Pick an odd start cell away from borders
+    int startR = randOdd(1, ROWS - 2);
+    int startC = randOdd(1, COLS - 2);
+
+    // Carve start
+    gridMap[startR][startC] = 0;
+
+    // 3) Iterative DFS stack (stores cell coordinates)
+    int stackR[ROWS * COLS];
+    int stackC[ROWS * COLS];
+    int top = 0;
+
+    stackR[top] = startR;
+    stackC[top] = startC;
+    top++;
+
+    while (top > 0) {
+        int r = stackR[top - 1];
+        int c = stackC[top - 1];
+
+        // Collect unvisited neighbors 2 steps away
+        int candR[4], candC[4];
+        int candCount = 0;
+
+        for (int i = 0; i < 4; i++) {
+            int nr = r + 2 * directions[i][0];
+            int nc = c + 2 * directions[i][1];
+
+            if (nr >= 1 && nr <= ROWS - 2 && nc >= 1 && nc <= COLS - 2 &&
+                gridMap[nr][nc] == 1) {
+                candR[candCount] = nr;
+                candC[candCount] = nc;
+                candCount++;
+            }
+        }
+
+        if (candCount > 0) {
+            // Choose random candidate
+            int k = rand() % candCount;
+            int nr = candR[k];
+            int nc = candC[k];
+
+            // Carve wall between (r,c) and (nr,nc)
+            int wallR = (r + nr) / 2;
+            int wallC = (c + nc) / 2;
+
+            gridMap[wallR][wallC] = 0;
+            gridMap[nr][nc] = 0;
+
+            // Push neighbor
+            stackR[top] = nr;
+            stackC[top] = nc;
+            top++;
+        } else {
+            // Backtrack
+            top--;
+        }
+    }
+
+    // 4) Mark start
+    gridMap[startR][startC] = 2;
+
+    // 5) Pick end as farthest reachable open cell
+    int endR, endC;
+    bfsFarthestCell(gridMap, startR, startC, &endR, &endC);
+
+    // Ensure we don't overwrite start
+    if (gridMap[endR][endC] == 2) {
+        // If somehow same (tiny maze), just find any open cell
+        for (int r = 1; r < ROWS - 1; r++) {
+            for (int c = 1; c < COLS - 1; c++) {
+                if (gridMap[r][c] == 0) { endR = r; endC = c; goto done; }
+            }
+        }
+    }
+done:
+    gridMap[endR][endC] = 3;
 }
 
 //Function to initialize the grid
@@ -95,11 +240,10 @@ struct Node* getLowestCostNode(struct Node* openList[], int* openListSize, bool 
     return minNode;
 }
 
-
 //This function ensures the position (row, col):
 //1. Is within the grid boundaries.
 //2. Is not a wall (gridMap[row][col] != 1).
-bool isValid(int row, int col, int gridMap[ROWS][COLS]) {
+bool isValid(int row, int col, int **gridMap) {
     return row >= 0 && row < ROWS && col >= 0 && col < COLS && gridMap[row][col] != 1;
 }
 
@@ -108,7 +252,7 @@ bool isValid(int row, int col, int gridMap[ROWS][COLS]) {
 //E for the endpoint
 //P for the path
 //. for unexplored areas
-void printGrid(int gridMap[ROWS][COLS], struct Node* goal) {
+void printGrid(int **gridMap, struct Node* goal) {
     char displayGrid[ROWS][COLS];
 
     // Initialize the grid with the map
@@ -130,7 +274,7 @@ void printGrid(int gridMap[ROWS][COLS], struct Node* goal) {
     struct Node* current = goal;
     while (current != NULL) {
         if (gridMap[current->row][current->col] == 0) {
-            displayGrid[current->row][current->col] = 'P';
+            displayGrid[current->row][current->col] = '+';
         }
         current = current->parent;
     }
@@ -145,15 +289,13 @@ void printGrid(int gridMap[ROWS][COLS], struct Node* goal) {
 }
 
 //Finds the shortest path from the start to the goal using only actual distances (g_cost).
-void dijkstra(struct Node grid[ROWS][COLS], int startRow, int startCol, int goalRow, int goalCol, int gridMap[ROWS][COLS]) {
+void dijkstra(struct Node grid[ROWS][COLS], int startRow, int startCol, int goalRow, int goalCol, int **gridMap) {
     struct Node* openList[ROWS * COLS]; //List of the nodes that were discovered, not yet processed
     int openListSize = 0;
 
     struct Node* startNode = &grid[startRow][startCol];
     startNode->g_cost = 0;
     openList[openListSize++] = startNode; 
-
-    int directions[4][2] = {{-1, 0}, {1, 0}, {0, -1}, {0, 1}}; // Up, Down, Left, Right
 
     while (openListSize > 0) { //If openListSize becomes empty (checked every path) before reaching the goal it means there is no valid path
         struct Node* current = getLowestCostNode(openList, &openListSize, false);
@@ -199,7 +341,7 @@ void dijkstra(struct Node grid[ROWS][COLS], int startRow, int startCol, int goal
 }
 
 //Finds the shortest path from the start to the goal using both actual distances (g_cost) and estimated distances (h_cost).
-void aStar(struct Node grid[ROWS][COLS], int startRow, int startCol, int goalRow, int goalCol, int gridMap[ROWS][COLS]) {
+void aStar(struct Node grid[ROWS][COLS], int startRow, int startCol, int goalRow, int goalCol, int **gridMap) {
     struct Node* openList[ROWS * COLS]; //List of the nodes that were discovered, not yet processed
     int openListSize = 0;
 
@@ -208,8 +350,6 @@ void aStar(struct Node grid[ROWS][COLS], int startRow, int startCol, int goalRow
     startNode->h_cost = heuristic(startRow, startCol, goalRow, goalCol);
     startNode->f_cost = startNode->g_cost + startNode->h_cost;
     openList[openListSize++] = startNode;
-
-    int directions[4][2] = {{-1, 0}, {1, 0}, {0, -1}, {0, 1}}; // Up, Down, Left, Right
 
     while (openListSize > 0) { //If openListSize becomes empty (checked every path) before reaching the goal it means there is no valid path
         struct Node* current = getLowestCostNode(openList, &openListSize, true);
@@ -257,18 +397,19 @@ void aStar(struct Node grid[ROWS][COLS], int startRow, int startCol, int goalRow
 }
 
 int main() {
-    int gridMap[ROWS][COLS] = {
-        {1, 1, 1, 1, 1, 1, 1, 1, 1, 1},
-        {1, 2, 0, 1, 0, 0, 0, 1, 3, 1},
-        {1, 1, 0, 1, 0, 1, 1, 1, 0, 1},
-        {1, 0, 0, 1, 0, 0, 1, 0, 0, 1},
-        {1, 1, 0, 1, 0, 1, 1, 0, 1, 1},
-        {1, 1, 0, 1, 0, 1, 0, 0, 0, 1},
-        {1, 0, 0, 0, 0, 1, 0, 1, 0, 1},
-        {1, 0, 1, 1, 0, 1, 1, 1, 0, 1},
-        {1, 0, 0, 1, 0, 0, 0, 0, 0, 1},
-        {1, 1, 1, 1, 1, 1, 1, 1, 1, 1}
-    };
+    printf("Maze Solver Program\n");
+    printf("What size maze would you like to generate? (odd numbers only < 339x339, e.g., 21 21): ");
+    scanf("%d %d", &ROWS, &COLS);
+    if(ROWS % 2 == 0) ROWS++;
+    if(COLS % 2 == 0) COLS++;
+
+    int **gridMap = malloc(ROWS * sizeof(int *));
+    for (int i = 0; i < ROWS; i++) {
+        gridMap[i] = malloc(COLS * sizeof(int));
+    }
+
+    srand((unsigned)time(NULL));
+    generateMaze(gridMap, ROWS, COLS);
 
     struct Node grid1[ROWS][COLS], grid2[ROWS][COLS];
     initializeGrid(grid1);
@@ -309,6 +450,6 @@ int main() {
     end = clock();
     cpu_time_used = ((double) (end - start)) / CLOCKS_PER_SEC;
     printf("A* Algorithm Time: %f seconds\n", cpu_time_used);
-
+    
     return 0;
 }
