@@ -1,0 +1,11 @@
+{
+	"InstallScripts" : 
+	[
+		"/Users/jackmunsell/Documents/Practice-Code/Sort/SortingSim/build/cmake_install.cmake",
+		"/Users/jackmunsell/Documents/Practice-Code/Sort/SortingSim/build/lib/cmake_install.cmake",
+		"/Users/jackmunsell/Documents/Practice-Code/Sort/SortingSim/build/lib/raylib/cmake_install.cmake",
+		"/Users/jackmunsell/Documents/Practice-Code/Sort/SortingSim/build/lib/raylib/external/glfw/cmake_install.cmake",
+		"/Users/jackmunsell/Documents/Practice-Code/Sort/SortingSim/build/lib/raylib/external/glfw/src/cmake_install.cmake"
+	],
+	"Parallel" : false
+}
